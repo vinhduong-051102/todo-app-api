@@ -10,6 +10,7 @@ function DataProvider({ children }) {
     const [id, setId] = useState(0)
     const [arrJobSearch, setArrJobSearch] = useState([])
     const [currJobs, setCurrJobs] = useState([])
+    const [isSearch, setIsSearch] = useState(false)
     useEffect(() => {
         axios.get('http://localhost:3000/jobs')
             .then((res) => setJobs(res.data))
@@ -54,14 +55,34 @@ function DataProvider({ children }) {
     }
 
     const handleStatus = async (data, id) => {
-        const prevJob = jobs.find(job => job.id === id)
-        await axios.put(`http://localhost:3000/jobs/${id}`, {
-            name: prevJob.name,
-            status: data
-        })
-        await axios.get('http://localhost:3000/jobs')
-            .then((res) => setJobs(res.data))
-            .catch((err) => console.log(err))
+        if(isSearch) {
+            const prevJob = jobs.find(job => job.id === id)
+            await axios.put(`http://localhost:3000/jobs/${id}`, {
+                name: prevJob.name,
+                status: data
+            })
+            await axios.get('http://localhost:3000/jobs')
+                .then((res) => {
+                    const newArr = []
+                    arrJobSearch.forEach((jobSearch) => {
+                        newArr.push(res.data.find((jobData) => {
+                            return jobData.id === jobSearch.id
+                        }))
+                    })
+                    setJobs(newArr)
+                })
+                .catch((err) => console.log(err))
+        }
+        else {
+            const prevJob = jobs.find(job => job.id === id)
+            await axios.put(`http://localhost:3000/jobs/${id}`, {
+                name: prevJob.name,
+                status: data
+            })
+            await axios.get('http://localhost:3000/jobs')
+                .then((res) => setJobs(res.data))
+                .catch((err) => console.log(err))
+        }
     }
 
     const handleEditJob = (id, name) => {
@@ -77,12 +98,14 @@ function DataProvider({ children }) {
             .catch((err) => console.log(err))
     }
     const handleSearchJob = (data) => {
+        setIsSearch(true)
         axios.get('http://localhost:3000/jobs')
             .then((res) => setCurrJobs(res.data))
             .catch((err) => console.log(err))
         setJobSearch(() => { 
             if(data === '') {
                 setArrJobSearch([])
+                setIsSearch(false)
                 axios.get('http://localhost:3000/jobs')
                     .then((res) => setJobs(res.data))
                     .catch((err) => console.log(err))
